@@ -37,6 +37,7 @@ def getProperty(String filename, String propName) {
 }
 
 android {
+    namespace "com.skydoves.themovies2"
     compileSdkVersion rootProject.compileSdkVersion
     defaultConfig {
         applicationId "com.skydoves.themovies2"
@@ -58,17 +59,18 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     kapt {
         correctErrorTypes = true
     }
     buildFeatures {
         dataBinding true
+        buildConfig true
     }
     sourceSets {
         androidTest.java.srcDirs += "src/test-common/java"
@@ -81,6 +83,7 @@ android {
         }
     }
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions.jvmTarget = "17"
         kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlin.time.ExperimentalTime"]
         kotlinOptions.freeCompilerArgs += ["-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"]
     }
@@ -93,7 +96,7 @@ dependencies {
 
     // architecture components
     implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
-    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycleExtensionsVersion"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.room:room-runtime:$roomVersion"
@@ -131,7 +134,6 @@ dependencies {
 
     // glide
     implementation "com.github.bumptech.glide:glide:$glideVersion"
-    implementation "com.github.florent37:glidepalette:$glidePaletteVersion"
     kapt "com.github.bumptech.glide:compiler:$glideVersion"
 
     // adapter

@@ -17,7 +17,7 @@
 package com.skydoves.themovies2.di
 
 import com.facebook.stetho.okhttp3.StethoInterceptor
-import com.skydoves.sandwich.coroutines.CoroutinesResponseCallAdapterFactory
+import com.skydoves.sandwich.adapters.ApiResponseCallAdapterFactory
 import com.skydoves.themovies2.api.Api
 import com.skydoves.themovies2.api.RequestInterceptor
 import com.skydoves.themovies2.api.service.MovieService
@@ -53,7 +53,7 @@ object NetworkModule {
       .client(okHttpClient)
       .baseUrl(Api.BASE_URL)
       .addConverterFactory(GsonConverterFactory.create())
-      .addCallAdapterFactory(CoroutinesResponseCallAdapterFactory.create())
+      .addCallAdapterFactory(ApiResponseCallAdapterFactory.create())
       .build()
   }
 

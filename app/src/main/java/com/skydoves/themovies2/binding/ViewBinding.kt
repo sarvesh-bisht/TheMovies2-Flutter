@@ -17,15 +17,19 @@
 package com.skydoves.themovies2.binding
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.databinding.BindingAdapter
+import androidx.palette.graphics.Palette
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
-import com.github.florent37.glidepalette.BitmapPalette
-import com.github.florent37.glidepalette.GlidePalette
+import com.bumptech.glide.request.target.Target
 import com.skydoves.themovies2.api.Api
 import com.skydoves.themovies2.extension.requestGlideListener
 import com.skydoves.themovies2.extension.visible
@@ -51,13 +55,34 @@ object ViewBinding {
   @BindingAdapter("loadPaletteImage", "loadPaletteTarget")
   fun bindLoadImage(view: AppCompatImageView, url: String, targetView: View) {
     Glide.with(view)
+      .asBitmap()
       .load(url)
-      .listener(
-        GlidePalette.with(url)
-          .use(BitmapPalette.Profile.VIBRANT)
-          .intoBackground(targetView)
-          .crossfade(true)
-      )
+      .listener(object : RequestListener<Bitmap> {
+        override fun onLoadFailed(
+          e: GlideException?,
+          model: Any?,
+          target: Target<Bitmap>,
+          isFirstResource: Boolean
+        ): Boolean = false
+
+        override fun onResourceReady(
+          resource: Bitmap,
+          model: Any,
+          target: Target<Bitmap>,
+          dataSource: DataSource,
+          isFirstResource: Boolean
+        ): Boolean {
+          resource.let {
+            Palette.from(it).generate { palette ->
+              val vibrant = palette?.vibrantSwatch
+              vibrant?.let { swatch ->
+                targetView.setBackgroundColor(swatch.rgb)
+              }
+            }
+          }
+          return false
+        }
+      })
       .into(view)
   }
 

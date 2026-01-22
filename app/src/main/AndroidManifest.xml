@@ -28,7 +28,9 @@
     android:supportsRtl="true"
     android:theme="@style/AppTheme"
     tools:ignore="AllowBackup,GoogleAppIndexingWarning">
-    <activity android:name="com.skydoves.themovies2.view.ui.main.MainActivity">
+    <activity
+      android:name="com.skydoves.themovies2.view.ui.main.MainActivity"
+      android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -36,11 +38,15 @@
     </activity>
     <activity
       android:name="com.skydoves.themovies2.view.ui.details.movie.MovieDetailActivity"
+      android:exported="false"
       android:theme="@style/DetailTheme" />
     <activity
       android:name="com.skydoves.themovies2.view.ui.details.tv.TvDetailActivity"
+      android:exported="false"
       android:theme="@style/DetailTheme" />
-    <activity android:name="com.skydoves.themovies2.view.ui.details.person.PersonDetailActivity" />
+    <activity
+      android:name="com.skydoves.themovies2.view.ui.details.person.PersonDetailActivity"
+      android:exported="false" />
   </application>
 
 </manifest>
