@@ -101,7 +101,11 @@ fun App() {
       Column(modifier = Modifier.fillMaxSize()) {
         TopBar(title = toolbarTitle, onBack = if (selectedDetail != null) ({ selectedDetail = null }) else null)
 
-        Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp)) {
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .then(if (selectedDetail == null) Modifier.padding(horizontal = 8.dp, vertical = 8.dp) else Modifier)
+        ) {
           when (val detail = selectedDetail) {
             is DetailItem.Movie -> PosterDetailView(
               title = detail.data.title,
@@ -332,7 +336,7 @@ private fun PosterDetailView(
   metadata: String
 ) {
   Column(modifier = Modifier.fillMaxSize()) {
-    Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+    Box(modifier = Modifier.fillMaxWidth().height(440.dp)) {
       MoviePoster(
         posterUrl = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
         contentDescription = title,
@@ -340,12 +344,13 @@ private fun PosterDetailView(
       )
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
-    Text(text = metadata, color = TabUnselected, style = MaterialTheme.typography.caption)
-    Text(text = title, color = TitleColor, style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
-    if (overview.isNotBlank()) {
-      Spacer(modifier = Modifier.height(8.dp))
-      Text(text = overview, color = TitleColor)
+    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+      Text(text = metadata, color = TabUnselected, style = MaterialTheme.typography.caption)
+      Text(text = title, color = TitleColor, style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
+      if (overview.isNotBlank()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = overview, color = TitleColor)
+      }
     }
   }
 }
