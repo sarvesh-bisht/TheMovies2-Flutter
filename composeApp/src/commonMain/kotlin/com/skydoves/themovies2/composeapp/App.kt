@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.skydoves.themovies2.shared.bootstrap.BootstrapMovieRepository
+import com.skydoves.themovies2.shared.bootstrap.SharedContainer
 import com.skydoves.themovies2.shared.core.domain.model.MovieSummary
 import com.skydoves.themovies2.shared.core.domain.usecase.GetPopularMoviesUseCase
 
@@ -24,7 +24,9 @@ fun App() {
   var movies by remember { mutableStateOf<List<MovieSummary>>(emptyList()) }
 
   LaunchedEffect(Unit) {
-    movies = GetPopularMoviesUseCase(BootstrapMovieRepository()).invoke()
+    // Keep null for now to use bootstrap data.
+    // Next step: provide key via platform-specific configuration.
+    movies = GetPopularMoviesUseCase(SharedContainer.movieRepository(apiKey = null)).invoke()
   }
 
   MaterialTheme {
