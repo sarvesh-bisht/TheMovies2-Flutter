@@ -3,7 +3,14 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.compose'
 
 kotlin {
-    androidTarget()
+    jvmToolchain(17)
+    androidTarget {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+    }
 
     iosX64()
     iosArm64()
