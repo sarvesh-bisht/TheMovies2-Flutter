@@ -14,12 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.skydoves.themovies2.composeapp.config.tmdbApiKeyOrNull
 import com.skydoves.themovies2.shared.bootstrap.SharedContainer
 import com.skydoves.themovies2.shared.feature.movielist.MovieListUiState
 
 @Composable
 fun App() {
-  val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = null) }
+  val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = tmdbApiKeyOrNull()) }
   val uiState by stateHolder.uiState.collectAsState()
 
   LaunchedEffect(Unit) {
@@ -28,7 +29,11 @@ fun App() {
 
   MaterialTheme {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-      Text(text = "ComposeApp bootstrap (Phase 3 state-holder flow)")
+      Text(text = "ComposeApp movie list (Phase 3 state-holder flow)")
+
+      if (tmdbApiKeyOrNull().isNullOrBlank()) {
+        Text(text = "Using bootstrap data (no TMDB API key configured).", modifier = Modifier.padding(top = 8.dp))
+      }
 
       when (val state = uiState) {
         is MovieListUiState.Loading -> {

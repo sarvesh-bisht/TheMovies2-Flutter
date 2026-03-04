@@ -1,3 +1,18 @@
+def getProperty(String filename, String propName) {
+    def propsFile = rootProject.file(filename)
+    if (propsFile.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(propsFile))
+        if (props[propName] != null) {
+            return props[propName]
+        } else {
+            return ""
+        }
+    } else {
+        return ""
+    }
+}
+
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.compose'
@@ -40,10 +55,12 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        buildConfigField "String", "TMDB_API_KEY", "\"${getProperty("local.properties", "tmdb_api_key")}\""
     }
 
     buildFeatures {
         compose true
+        buildConfig true
     }
 
     composeOptions {
