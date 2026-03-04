@@ -19,6 +19,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://maven.pkg.jetbrains.space/public/p/compose/dev' }
         maven { url 'https://jitpack.io' }
         gradlePluginPortal()
     }
@@ -93,6 +94,9 @@ buildscript {
         espressoVersion = '3.5.1'
         jacocoVersion = '0.8.11'
 
+        // compose multiplatform
+        composeMultiplatformVersion = '1.6.10'
+
         // plugins
         spotlessVersion = '6.23.3'
         versionPlugin = '0.51.0'
@@ -101,6 +105,7 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:$gradleBuildTool"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "org.jetbrains.compose:compose-gradle-plugin:$composeMultiplatformVersion"
         classpath "com.google.dagger:hilt-android-gradle-plugin:$hiltCoreVersion"
         classpath "com.diffplug.spotless:spotless-plugin-gradle:$spotlessVersion"
         classpath "com.github.ben-manes:gradle-versions-plugin:$versionPlugin"
@@ -113,6 +118,7 @@ allprojects {
         maven { url 'https://jitpack.io' }
         google()
         mavenCentral()
+        maven { url 'https://maven.pkg.jetbrains.space/public/p/compose/dev' }
     }
 }
 

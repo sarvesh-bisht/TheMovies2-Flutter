@@ -1,0 +1,33 @@
+apply plugin: 'org.jetbrains.kotlin.multiplatform'
+apply plugin: 'com.android.library'
+
+kotlin {
+    androidTarget()
+
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+        }
+        commonTest.dependencies {
+            implementation "org.jetbrains.kotlin:kotlin-test"
+        }
+    }
+}
+
+android {
+    namespace "com.skydoves.themovies2.shared"
+    compileSdkVersion rootProject.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
