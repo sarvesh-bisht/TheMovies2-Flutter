@@ -1,168 +1,189 @@
 # Compose Multiplatform Migration Plan (Android + iOS)
 
+## Short answer to “any changes in plan if we actually execute this?”
+
+Yes — I would **change the sequencing** to reduce risk:
+
+1. Add a **Phase 0.5 (Android hardening)** before KMP extraction.
+2. Start with a **single thin vertical slice** (Movie list read-only) as the only POC scope.
+3. Delay full database migration (Room → SQLDelight) until after network/domain are stable in KMP.
+4. Keep a **dual-run fallback path on Android** for at least 2 releases.
+
+This avoids a big-bang rewrite and gives measurable checkpoints before committing to full cutover.
+
+---
+
 ## 1) Current-state analysis of this repository
 
-This codebase is a single Android app module (`:app`) with XML/DataBinding-based UI, Fragments/Activities, Room persistence, Hilt DI, Retrofit networking, and Android-specific adapters/custom views.
+This repo is currently an Android app (`:app`) using:
+- XML/DataBinding + Fragment/Activity UI
+- Hilt DI
+- Room persistence
+- Retrofit/OkHttp networking
+- Android-specific adapters/custom views
 
-### What this means for migration
+### Migration implications
 
-- **UI rewrite is mandatory** for iOS support because current screens are XML + Fragment/Activity based.
-- **Business/data layer is partially reusable** because repositories already use Kotlin + coroutines + flows.
-- **Persistence/DI/network stacks need KMP-compatible replacements or abstractions**.
+- **UI must be rewritten** for iOS (current XML/Fragment stack is Android-only).
+- **Repositories and coroutine/Flow patterns are reusable** conceptually.
+- **DI, DB, networking need platform-neutral abstractions** for KMP.
+
+---
 
 ## 2) Target architecture (practical end state)
 
-Use a multi-module Kotlin Multiplatform setup while keeping Android shipping during migration:
+Recommended modules:
 
-- `shared:core-model` (common data models / mappers)
-- `shared:core-network` (Ktor client + API interfaces)
-- `shared:core-database` (SQLDelight)
-- `shared:core-domain` (use-cases + repository interfaces)
-- `shared:feature-*` (state holders / view models in common)
-- `composeApp` (Compose Multiplatform UI target: Android + iOS)
-- Optional temporary `app` (legacy Android app for incremental coexistence)
-
-## 3) Migration strategy (incremental, low-risk)
-
-### Phase 0 — Discovery and baseline (1 week)
-
-1. Freeze feature development except critical bug fixes.
-2. Record baseline quality gates:
-   - startup time
-   - key screen render times
-   - crash-free sessions
-   - API error rate
-3. Catalog all Android-only dependencies and map replacements.
-4. Define “done” criteria for each migrated screen.
-
-**Exit criteria:** baseline metrics + dependency replacement matrix approved.
+- `composeApp` — Compose Multiplatform app shell (Android + iOS entry)
+- `shared:core-model` — DTO/domain model + mappers
+- `shared:core-network` — Ktor client + TMDB service layer
+- `shared:core-database` — SQLDelight schema + queries
+- `shared:core-domain` — use cases + repository interfaces
+- `shared:feature-home` / `shared:feature-detail-*` — state holders + UI contracts
+- legacy `:app` — temporary coexistence until full cutover
 
 ---
 
-### Phase 1 — Build system and module scaffolding (1–2 weeks)
+## 3) Revised practical migration strategy (execution-oriented)
 
-1. Upgrade Gradle setup to modern plugin management (`settings.gradle.kts`, version catalogs).
-2. Add Kotlin Multiplatform + Compose Multiplatform plugins.
-3. Create `shared` KMP modules with `commonMain`, `androidMain`, `iosMain` source sets.
-4. Add iOS targets (`iosArm64`, `iosSimulatorArm64`, `iosX64`) and CocoaPods/SPM integration.
+### Phase 0 — Baseline & constraints (1 week)
 
-**Exit criteria:** Android and iOS sample screen builds from Compose Multiplatform shell app.
+1. Freeze non-critical feature work.
+2. Capture baseline metrics (startup, list scroll FPS, crash-free rate, API failure rate).
+3. Build dependency replacement matrix with owner per dependency.
+4. Define acceptance criteria per screen (UI parity + behavior parity).
 
----
+**Exit gate:** measurable baseline and written parity checklist.
 
-### Phase 2 — Data + domain extraction first (2–3 weeks)
+### Phase 0.5 — Android hardening before KMP (1 week) **(new)**
 
-1. Move pure models from `app` into `shared:core-model`.
-2. Introduce repository interfaces in common code.
-3. Replace Retrofit/OkHttp usage with Ktor-based client in `shared:core-network`.
-4. Migrate Room entities/DAO to SQLDelight schema + queries in `shared:core-database`.
-5. Keep old Android repository implementation temporarily as fallback behind interface toggles.
+1. Add/expand tests around current critical flows (movie list, movie detail).
+2. Introduce stable repository interfaces in current app without behavior changes.
+3. Isolate Android framework calls behind wrappers where needed.
 
-**Exit criteria:** movie list/detail data flows run from shared module on Android and iOS test harness.
+**Why this change:** lowers migration risk by separating refactor risk from platform migration risk.
 
----
+**Exit gate:** no regression on Android after interface extraction.
 
-### Phase 3 — State management for shared UI logic (1–2 weeks)
+### Phase 1 — KMP bootstrap (1–2 weeks)
 
-1. Replace Android `ViewModel` dependencies in shared features with platform-neutral state holders
-   (e.g., Molecule/Flow-based Store or KMP ViewModel library).
-2. Define unidirectional state/events/effects contracts per feature.
-3. Move pagination/caching/error states into common layer.
+1. Add Kotlin Multiplatform + Compose Multiplatform setup.
+2. Create `commonMain/androidMain/iosMain` source sets.
+3. Configure iOS targets (`iosArm64`, `iosSimulatorArm64`, `iosX64`).
+4. Build a hello-world Compose screen on both Android and iOS simulator.
 
-**Exit criteria:** screen state logic executes in common tests without Android runtime.
+**Exit gate:** repeatable CI build for Android + iOS simulator.
 
----
+### Phase 2 — Network/domain first, DB later (2–3 weeks) **(changed sequencing)**
 
-### Phase 4 — Compose UI migration by vertical slices (4–6 weeks)
+1. Move API contracts and response mapping into `shared:core-network` (Ktor).
+2. Move use-cases/repository interfaces into `shared:core-domain`.
+3. Keep Room temporarily on Android via adapter implementation.
 
-Migrate feature-by-feature, not layer-by-layer:
+**Why this change:** DB migration is the riskiest early task; defer until service/domain contracts stabilize.
 
-1. Home tabs (Movies / TV / People)
-2. Movie detail
-3. TV detail
-4. Person detail
+**Exit gate:** shared domain flow powers movie list on Android and iOS mock/stub.
+
+### Phase 3 — Vertical slice POC (Movie list read-only) (2 weeks) **(narrowed scope)**
+
+1. Build Movie list UI in Compose Multiplatform.
+2. Use shared state holder (Flow-based state/events).
+3. Run A/B on Android behind feature flag.
+4. Render same slice on iOS simulator.
+
+**Exit gate:** one feature in production-like quality across both platforms.
+
+### Phase 4 — DB migration + caching parity (2 weeks)
+
+1. Introduce SQLDelight schema for movie/tv/people.
+2. Implement repository adapters for SQLDelight and deprecate Room path gradually.
+3. Validate cache behavior and offline/empty/error states.
+
+**Exit gate:** SQLDelight-backed flow parity with old behavior.
+
+### Phase 5 — Remaining screens by vertical slices (4–6 weeks)
+
+Migrate in order:
+1. TV list + detail
+2. Person list + detail
+3. Remaining shared UI components and transitions
 
 For each slice:
-- build Compose screen in `commonMain`
-- add platform wrappers for navigation/system UI
-- compare behavior with legacy screen
-- ship behind feature flag on Android first
-- then enable on iOS
+- feature flag rollout (Android first)
+- parity validation checklist
+- iOS enablement after Android stability
 
-**Exit criteria:** all core screens available in Compose Multiplatform.
+**Exit gate:** all core journeys available in Compose Multiplatform.
 
----
+### Phase 6 — Cutover & decommission (1–2 weeks)
 
-### Phase 5 — Platform integration and parity hardening (2 weeks)
+1. Keep legacy Android stack as fallback for 2 releases (recommended).
+2. Remove XML/DataBinding/adapters once adoption metrics are stable.
+3. Clean module graph and simplify CI to new targets.
 
-1. Image loading abstraction (Coil 3 KMP or Kamel) with caching checks.
-2. Navigation strategy finalized (Voyager/Decompose/Navigation Compose MP).
-3. Deep links, lifecycle/background handling, and analytics parity.
-4. Theme parity for Android/iOS and accessibility fixes.
-
-**Exit criteria:** parity checklist signed off by QA and product.
+**Exit gate:** no production traffic on legacy UI path.
 
 ---
 
-### Phase 6 — Cutover and cleanup (1 week)
+## 4) Dependency replacement map
 
-1. Remove legacy XML/DataBinding screens after stable rollout.
-2. Remove legacy adapters/custom view dependencies.
-3. Collapse temporary compatibility layers.
-4. Update CI/CD for Android + iOS artifacts and automated tests.
+- XML/DataBinding/RecyclerView adapters → Compose Multiplatform UI (`LazyColumn`, composables)
+- Hilt (Android-only) → Koin KMP or manual DI composition root
+- Retrofit/OkHttp annotations → Ktor client
+- Room → SQLDelight
+- Glide → Coil 3 KMP (or Kamel)
+- Android custom views → Compose replacements / `expect-actual` wrappers
 
-**Exit criteria:** no production path through legacy Android UI.
+---
 
-## 4) Dependency replacement map (recommended)
+## 5) Risk analysis and mitigation
 
-- **DataBinding + XML + Fragments/Activities** → Compose Multiplatform UI + navigation wrapper
-- **Hilt (Android only)** → Koin (KMP-friendly) or manual DI composition root
-- **Room** → SQLDelight (shared DB)
-- **Retrofit/OkHttp annotations** → Ktor client
-- **Glide** → Coil 3 KMP/Kamel image loader
-- **BaseRecyclerViewAdapter/custom adapters** → Compose lazy lists
-- **Custom Android Views** → Compose equivalents or platform-specific expect/actual wrappers
+| Risk | Probability | Impact | Mitigation |
+|---|---|---|---|
+| Underestimated UI rewrite effort | High | High | Vertical-slice rollout + strict definition-of-done per screen |
+| Room→SQLDelight migration bugs | Medium | High | Defer DB migration until network/domain stable; dual-run comparison tests |
+| Performance regressions in media lists | Medium | High | Baseline FPS/startup + perf gates before rollout expansion |
+| KMP/iOS tooling ramp-up | Medium | Medium | Start iOS CI in Phase 1; pair-review first 2 slices |
+| CI/build instability in multi-module setup | High | Medium | Lock plugin versions + incremental module introduction |
+| Feature parity drift | Medium | Medium | Mandatory parity checklist + release gates per slice |
+| Rollback complexity | Medium | High | Keep Android legacy fallback for at least 2 releases |
 
-## 5) Risk analysis (practical)
+---
 
-| Risk | Probability | Impact | Why it matters here | Mitigation |
-|---|---|---|---|---|
-| UI rewrite scope under-estimated | High | High | Current app is XML/DataBinding + Fragment-heavy | Migrate by vertical slice with feature flags; avoid big-bang |
-| Data layer portability blockers | Medium | High | Room/Hilt/Retrofit are Android-first patterns in current code | Interface-first extraction; keep fallback Android impl during transition |
-| Performance regressions in lists/detail screens | Medium | Medium-High | App is media/list heavy with images and rich detail layouts | Benchmark lazy list/image cache early; baseline and gate releases |
-| iOS team/tooling ramp-up | Medium | Medium | Existing repo is Android-centric | Add iOS CI lane early; pair Android+iOS reviews on first 2 slices |
-| Build complexity and CI instability | High | Medium | Going from single module to KMP multi-target | Incremental module introduction + deterministic dependency versions |
-| Feature parity gaps (navigation/deeplink/analytics) | Medium | Medium | Android integrations currently embedded in Activities/Fragments | Explicit parity checklist per slice before rollout |
-| QA matrix expansion | High | Medium | Two platforms, multiple OS/device targets | Prioritize critical journeys; automate snapshot + API contract tests |
+## 6) Timeline (revised realistic example)
 
-## 6) Recommended timeline (example)
+- Weeks 1–2: Phase 0 + 0.5
+- Weeks 3–4: Phase 1
+- Weeks 5–7: Phase 2
+- Weeks 8–9: Phase 3 (POC slice)
+- Weeks 10–11: Phase 4
+- Weeks 12–16: Phase 5
+- Weeks 17–18: Phase 6
 
-- **Weeks 1–2:** Phases 0–1
-- **Weeks 3–5:** Phase 2
-- **Weeks 6–7:** Phase 3
-- **Weeks 8–13:** Phase 4 (vertical slices)
-- **Weeks 14–15:** Phase 5
-- **Week 16:** Phase 6 and decommission
+---
 
-## 7) Team and delivery model
+## 7) Team model
 
-- 1 tech lead (KMP architecture)
-- 1–2 Android engineers (migration + parity)
-- 1 iOS engineer (integration + native concerns)
+Minimum effective team:
+- 1 KMP tech lead
+- 1–2 Android engineers
+- 1 iOS engineer
 - 1 QA automation engineer
-- Product/design support for parity decisions
 
-Use **weekly go/no-go** checkpoints with objective metrics:
-- Build health
-- Crash-free rate
-- Startup/perf deltas
-- Parity checklist completion per feature
+Weekly review gates:
+- Build health (Android + iOS)
+- Crash/perf deltas vs baseline
+- Slice parity score
+- Rollout readiness decision (go/hold/rollback)
 
-## 8) Immediate next actions for this repository
+---
 
-1. Create a branch `kmp-bootstrap` and scaffold KMP modules without removing `:app`.
-2. Migrate one low-risk path first (e.g., movie list read-only).
-3. Add shared API client + SQLDelight proof-of-concept wired into Android.
-4. Validate iOS simulator rendering of the same feature before expanding scope.
+## 8) Immediate next actions (this repository)
 
-This keeps delivery practical: maintain current Android behavior while progressively moving logic/UI into common code.
+1. Bootstrap `composeApp` + `shared:*` modules while keeping `:app` untouched.
+2. Extract repository interfaces from current Android implementations.
+3. Implement TMDB network path in `shared:core-network` with Ktor.
+4. Deliver only **Movie list read-only** as first end-to-end KMP slice.
+5. Decide go/no-go for full migration based on objective metrics from that slice.
+
+This revised plan is intentionally conservative: prove value with one real slice, then scale.
