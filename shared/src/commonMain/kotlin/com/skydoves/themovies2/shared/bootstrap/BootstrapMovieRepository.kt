@@ -14,13 +14,13 @@ class BootstrapMovieRepository : MovieRepository {
         id = 603,
         title = "The Matrix",
         overview = "A computer hacker learns about the true nature of reality.",
-        posterPath = null
+        posterPath = "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
       ),
       MovieSummary(
         id = 680,
         title = "Pulp Fiction",
         overview = "Stories of crime intertwine in Los Angeles.",
-        posterPath = null
+        posterPath = "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
       )
     )
   }
