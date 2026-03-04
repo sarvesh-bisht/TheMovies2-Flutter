@@ -3,7 +3,14 @@ apply plugin: 'com.android.library'
 apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 kotlin {
-    androidTarget()
+    jvmToolchain(17)
+    androidTarget {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+    }
 
     iosX64()
     iosArm64()
