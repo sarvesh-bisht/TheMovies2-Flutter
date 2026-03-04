@@ -2,6 +2,7 @@ package com.skydoves.themovies2.composeapp
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +52,7 @@ fun App() {
   val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = tmdbApiKeyOrNull()) }
   val uiState by stateHolder.uiState.collectAsState()
   val scope = rememberCoroutineScope()
+  var selectedMovie by remember { mutableStateOf<MovieSummary?>(null) }
 
   LaunchedEffect(Unit) {
     stateHolder.load(page = 1)
@@ -56,11 +60,13 @@ fun App() {
 
   MaterialTheme {
     Surface(color = AppBackground, modifier = Modifier.fillMaxSize()) {
-      Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-          TopBar()
+      Column(modifier = Modifier.fillMaxSize()) {
+        TopBar()
 
-          Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp)) {
+        Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp)) {
+          if (selectedMovie != null) {
+            MovieDetailView(movie = selectedMovie!!, onBack = { selectedMovie = null })
+          } else {
             when (val state = uiState) {
               is MovieListUiState.Loading -> Text(text = "Loading movies...", color = TitleColor)
 
@@ -80,15 +86,15 @@ fun App() {
                   verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                   items(state.movies, key = { it.id }) { movie ->
-                    MoviePosterItem(movie)
+                    MoviePosterItem(movie = movie, onClick = { selectedMovie = movie })
                   }
                 }
               }
             }
           }
-
-          BottomBar()
         }
+
+        BottomBar()
       }
     }
   }
@@ -130,11 +136,12 @@ private fun BottomBar() {
 }
 
 @Composable
-private fun MoviePosterItem(movie: MovieSummary) {
+private fun MoviePosterItem(movie: MovieSummary, onClick: () -> Unit) {
   Box(
     modifier = Modifier
       .fillMaxWidth()
       .height(290.dp)
+      .clickable(onClick = onClick)
   ) {
     MoviePoster(
       posterUrl = movie.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
@@ -162,5 +169,30 @@ private fun MoviePosterItem(movie: MovieSummary) {
         modifier = Modifier.padding(horizontal = 6.dp)
       )
     }
+  }
+}
+
+@Composable
+private fun MovieDetailView(movie: MovieSummary, onBack: () -> Unit) {
+  Column(modifier = Modifier.fillMaxSize()) {
+    Button(onClick = onBack) {
+      Text("Back")
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(300.dp)
+    ) {
+      MoviePoster(
+        posterUrl = movie.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
+        contentDescription = movie.title,
+        modifier = Modifier.fillMaxSize()
+      )
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(text = movie.title, color = TitleColor, style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = movie.overview, color = TitleColor)
   }
 }
