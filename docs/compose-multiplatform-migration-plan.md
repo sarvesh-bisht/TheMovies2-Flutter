@@ -224,6 +224,30 @@ If these are not met, pause and re-scope before Phase 2.
 
 ---
 
+## Verification approach (recommended)
+
+Yes — **stop after each phase** and review/run before moving forward.
+
+### Review cadence
+- End of every phase: demo + checklist review + go/hold decision.
+- If any exit criteria is not met: do not proceed to next phase.
+
+### What to verify at each phase gate
+1. **Build verification**: Android + iOS simulator build status in CI.
+2. **Behavior verification**: phase-specific acceptance checklist passed.
+3. **Performance verification**: no unacceptable regression vs baseline.
+4. **Rollback verification**: previous stable path can still be enabled (feature flag/fallback).
+
+### Suggested practical workflow
+- Keep phases short (1–2 weeks where possible).
+- Ship only one meaningful slice at a time.
+- After each phase, you review and run it locally/staging before approval.
+- Move forward only with explicit signoff (Go).
+
+This is better than continuous unchecked progress because it limits blast radius and makes rollback/triage manageable.
+
+---
+
 ## Immediate next actions for this repository
 
 1. Keep `:app` untouched for now.
