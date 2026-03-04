@@ -19,7 +19,11 @@ object HttpClientFactory {
         )
       }
       install(Logging) {
-        logger = Logger.DEFAULT
+        logger = object : Logger {
+          override fun log(message: String) {
+            println(message)
+          }
+        }
         level = LogLevel.INFO
       }
     }
