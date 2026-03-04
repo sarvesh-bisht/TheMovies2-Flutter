@@ -1,6 +1,5 @@
 apply plugin: 'org.jetbrains.kotlin.multiplatform'
 apply plugin: 'com.android.library'
-apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 kotlin {
     androidTarget()
@@ -12,7 +11,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-            implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
         }
         commonTest.dependencies {
             implementation "org.jetbrains.kotlin:kotlin-test"
