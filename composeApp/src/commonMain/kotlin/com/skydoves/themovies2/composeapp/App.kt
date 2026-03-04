@@ -45,6 +45,9 @@ private val AppBackground = Color(0xFF121212)
 private val BrandPink = Color(0xFFC51162)
 private val OverlayBackground = Color(0xAA3D0B2C)
 private val TitleColor = Color.White
+private val TabUnselected = Color(0xFFF2C6DA)
+
+private enum class HomeTab { Movie, Tv, Star }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -53,6 +56,7 @@ fun App() {
   val uiState by stateHolder.uiState.collectAsState()
   val scope = rememberCoroutineScope()
   var selectedMovie by remember { mutableStateOf<MovieSummary?>(null) }
+  var selectedTab by remember { mutableStateOf(HomeTab.Movie) }
 
   LaunchedEffect(Unit) {
     stateHolder.load(page = 1)
@@ -64,37 +68,50 @@ fun App() {
         TopBar()
 
         Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp)) {
-          if (selectedMovie != null) {
-            MovieDetailView(movie = selectedMovie!!, onBack = { selectedMovie = null })
-          } else {
-            when (val state = uiState) {
-              is MovieListUiState.Loading -> Text(text = "Loading movies...", color = TitleColor)
+          when (selectedTab) {
+            HomeTab.Movie -> {
+              if (selectedMovie != null) {
+                MovieDetailView(movie = selectedMovie!!, onBack = { selectedMovie = null })
+              } else {
+                when (val state = uiState) {
+                  is MovieListUiState.Loading -> Text(text = "Loading movies...", color = TitleColor)
 
-              is MovieListUiState.Error -> {
-                Column {
-                  Text(text = "Failed to load movies", fontWeight = FontWeight.SemiBold, color = TitleColor)
-                  Text(text = state.message, modifier = Modifier.padding(top = 4.dp), color = TitleColor)
-                  Spacer(modifier = Modifier.height(8.dp))
-                  Button(onClick = { scope.launch { stateHolder.load(page = 1) } }) { Text("Retry") }
-                }
-              }
+                  is MovieListUiState.Error -> {
+                    Column {
+                      Text(text = "Failed to load movies", fontWeight = FontWeight.SemiBold, color = TitleColor)
+                      Text(text = state.message, modifier = Modifier.padding(top = 4.dp), color = TitleColor)
+                      Spacer(modifier = Modifier.height(8.dp))
+                      Button(onClick = { scope.launch { stateHolder.load(page = 1) } }) { Text("Retry") }
+                    }
+                  }
 
-              is MovieListUiState.Success -> {
-                LazyVerticalGrid(
-                  columns = GridCells.Fixed(2),
-                  horizontalArrangement = Arrangement.spacedBy(2.dp),
-                  verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                  items(state.movies, key = { it.id }) { movie ->
-                    MoviePosterItem(movie = movie, onClick = { selectedMovie = movie })
+                  is MovieListUiState.Success -> {
+                    LazyVerticalGrid(
+                      columns = GridCells.Fixed(2),
+                      horizontalArrangement = Arrangement.spacedBy(2.dp),
+                      verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                      items(state.movies, key = { it.id }) { movie ->
+                        MoviePosterItem(movie = movie, onClick = { selectedMovie = movie })
+                      }
+                    }
                   }
                 }
               }
             }
+
+            HomeTab.Tv -> PlaceholderTabContent(title = "TV", description = "TV tab migration is next.")
+            HomeTab.Star -> PlaceholderTabContent(title = "Star", description = "Star tab migration is next.")
           }
         }
 
-        BottomBar()
+        BottomBar(
+          selected = selectedTab,
+          onSelect = {
+            selectedTab = it
+            if (it != HomeTab.Movie) selectedMovie = null
+          }
+        )
       }
     }
   }
@@ -120,7 +137,10 @@ private fun TopBar() {
 }
 
 @Composable
-private fun BottomBar() {
+private fun BottomBar(
+  selected: HomeTab,
+  onSelect: (HomeTab) -> Unit
+) {
   Row(
     modifier = Modifier
       .fillMaxWidth()
@@ -129,9 +149,28 @@ private fun BottomBar() {
     horizontalArrangement = Arrangement.SpaceEvenly,
     verticalAlignment = Alignment.CenterVertically
   ) {
-    Text(text = "Movie", color = Color.White, fontWeight = FontWeight.Bold)
-    Text(text = "Tv", color = Color.White, fontWeight = FontWeight.Bold)
-    Text(text = "Star", color = Color.White, fontWeight = FontWeight.Bold)
+    TabItem(label = "Movie", selected = selected == HomeTab.Movie) { onSelect(HomeTab.Movie) }
+    TabItem(label = "Tv", selected = selected == HomeTab.Tv) { onSelect(HomeTab.Tv) }
+    TabItem(label = "Star", selected = selected == HomeTab.Star) { onSelect(HomeTab.Star) }
+  }
+}
+
+@Composable
+private fun TabItem(label: String, selected: Boolean, onClick: () -> Unit) {
+  Text(
+    text = label,
+    color = if (selected) Color.White else TabUnselected,
+    fontWeight = FontWeight.Bold,
+    modifier = Modifier.clickable(onClick = onClick)
+  )
+}
+
+@Composable
+private fun PlaceholderTabContent(title: String, description: String) {
+  Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+    Text(text = title, color = TitleColor, style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = description, color = TitleColor)
   }
 }
 
