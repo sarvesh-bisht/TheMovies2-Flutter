@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -20,6 +21,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.material.icons.filled.LocalMovies
 import androidx.compose.material.icons.filled.Star
@@ -87,10 +89,17 @@ fun App() {
     starStateHolder.load(page = 1)
   }
 
+  val toolbarTitle = when (val detail = selectedDetail) {
+    is DetailItem.Movie -> detail.data.title
+    is DetailItem.Tv -> detail.data.name
+    is DetailItem.Person -> detail.data.name
+    null -> "TheMovies2"
+  }
+
   MaterialTheme {
     Surface(color = AppBackground, modifier = Modifier.fillMaxSize()) {
       Column(modifier = Modifier.fillMaxSize()) {
-        TopBar(title = "TheMovies2")
+        TopBar(title = toolbarTitle, onBack = if (selectedDetail != null) ({ selectedDetail = null }) else null)
 
         Box(modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp)) {
           when (val detail = selectedDetail) {
@@ -99,21 +108,21 @@ fun App() {
               overview = detail.data.overview,
               posterPath = detail.data.posterPath,
               metadata = "Movie"
-            ) { selectedDetail = null }
+            )
 
             is DetailItem.Tv -> PosterDetailView(
               title = detail.data.name,
               overview = detail.data.overview,
               posterPath = detail.data.posterPath,
               metadata = "TV"
-            ) { selectedDetail = null }
+            )
 
             is DetailItem.Person -> PosterDetailView(
               title = detail.data.name,
               overview = detail.data.knownForDepartment ?: "",
               posterPath = detail.data.profilePath,
               metadata = "Star"
-            ) { selectedDetail = null }
+            )
 
             null -> when (selectedTab) {
               HomeTab.Movie -> MovieGridContent(uiState = movieUiState, onMovieClick = {
@@ -140,16 +149,25 @@ fun App() {
 }
 
 @Composable
-private fun TopBar(title: String) {
-  Box(
+private fun TopBar(title: String, onBack: (() -> Unit)? = null) {
+  Row(
     modifier = Modifier
       .fillMaxWidth()
       .height(64.dp)
       .background(BrandPink)
       .padding(horizontal = 16.dp),
-    contentAlignment = Alignment.CenterStart
+    verticalAlignment = Alignment.CenterVertically
   ) {
-    Text(text = title, color = Color.White, style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold)
+    if (onBack != null) {
+      Icon(
+        imageVector = Icons.Default.ArrowBack,
+        contentDescription = "Back",
+        tint = Color.White,
+        modifier = Modifier.clickable(onClick = onBack)
+      )
+      Spacer(modifier = Modifier.width(8.dp))
+    }
+    Text(text = title, color = Color.White, style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
   }
 }
 
@@ -311,17 +329,9 @@ private fun PosterDetailView(
   title: String,
   overview: String,
   posterPath: String?,
-  metadata: String,
-  onBack: () -> Unit
+  metadata: String
 ) {
   Column(modifier = Modifier.fillMaxSize()) {
-    Text(
-      text = "← Back",
-      color = Color.White,
-      modifier = Modifier.padding(vertical = 8.dp).clickable(onClick = onBack),
-      fontWeight = FontWeight.Bold
-    )
-
     Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
       MoviePoster(
         posterUrl = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },

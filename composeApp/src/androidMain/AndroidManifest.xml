@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET" />
-  <application android:label="TheMovies2 Compose">
+  <application
+    android:label="TheMovies2 Compose"
+    android:theme="@style/Theme.TheMovies2Compose">
     <activity
       android:name="com.skydoves.themovies2.composeapp.MainActivity"
       android:exported="true">
