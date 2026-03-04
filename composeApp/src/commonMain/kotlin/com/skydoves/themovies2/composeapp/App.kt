@@ -1,10 +1,17 @@
 package com.skydoves.themovies2.composeapp
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -12,16 +19,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.skydoves.themovies2.composeapp.config.tmdbApiKeyOrNull
 import com.skydoves.themovies2.shared.bootstrap.SharedContainer
+import com.skydoves.themovies2.shared.core.domain.model.MovieSummary
 import com.skydoves.themovies2.shared.feature.movielist.MovieListUiState
+import kotlinx.coroutines.launch
 
 @Composable
 fun App() {
-  val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = tmdbApiKeyOrNull()) }
+  val apiKey = tmdbApiKeyOrNull()
+  val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = apiKey) }
   val uiState by stateHolder.uiState.collectAsState()
+  val scope = rememberCoroutineScope()
 
   LaunchedEffect(Unit) {
     stateHolder.load(page = 1)
@@ -29,11 +42,18 @@ fun App() {
 
   MaterialTheme {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-      Text(text = "ComposeApp movie list (Phase 3 state-holder flow)")
+      Text(text = "Movies", style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold)
+      Text(
+        text = if (apiKey.isNullOrBlank()) {
+          "Data source: Bootstrap fallback"
+        } else {
+          "Data source: TMDB API"
+        },
+        style = MaterialTheme.typography.body2,
+        modifier = Modifier.padding(top = 4.dp)
+      )
 
-      if (tmdbApiKeyOrNull().isNullOrBlank()) {
-        Text(text = "Using bootstrap data (no TMDB API key configured).", modifier = Modifier.padding(top = 8.dp))
-      }
+      Spacer(modifier = Modifier.height(12.dp))
 
       when (val state = uiState) {
         is MovieListUiState.Loading -> {
@@ -41,17 +61,52 @@ fun App() {
         }
 
         is MovieListUiState.Error -> {
-          Text(text = "Error: ${state.message}")
+          Text(text = "Failed to load movies", fontWeight = FontWeight.SemiBold)
+          Text(text = state.message, modifier = Modifier.padding(top = 4.dp))
+          Spacer(modifier = Modifier.height(8.dp))
+          Button(onClick = { scope.launch { stateHolder.load(page = 1) } }) {
+            Text("Retry")
+          }
         }
 
         is MovieListUiState.Success -> {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Text(text = "${state.movies.size} movies", style = MaterialTheme.typography.subtitle2)
+            Button(onClick = { scope.launch { stateHolder.load(page = 1) } }) {
+              Text("Refresh")
+            }
+          }
+
+          Spacer(modifier = Modifier.height(8.dp))
+
           LazyColumn {
             items(state.movies) { movie ->
-              Text(text = "• ${movie.title}", modifier = Modifier.padding(top = 8.dp))
+              MovieItem(movie)
             }
           }
         }
       }
+    }
+  }
+}
+
+@Composable
+private fun MovieItem(movie: MovieSummary) {
+  Card(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 6.dp),
+    elevation = 4.dp
+  ) {
+    Column(modifier = Modifier.padding(12.dp)) {
+      Text(text = movie.title, style = MaterialTheme.typography.subtitle1, fontWeight = FontWeight.Bold)
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(text = movie.overview, style = MaterialTheme.typography.body2)
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(text = "ID: ${movie.id}", style = MaterialTheme.typography.caption)
     }
   }
 }
