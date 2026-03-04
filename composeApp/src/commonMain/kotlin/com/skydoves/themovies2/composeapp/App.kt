@@ -186,8 +186,14 @@ private fun MovieGridContent(uiState: MovieListUiState, onMovieClick: (MovieSumm
   when (uiState) {
     is MovieListUiState.Loading -> LoadingText()
     is MovieListUiState.Error -> ErrorText(uiState.message)
-    is MovieListUiState.Success -> PosterGrid(uiState.movies) { movie ->
-      PosterGridItem(title = movie.title, posterPath = movie.posterPath, onClick = { onMovieClick(movie) })
+    is MovieListUiState.Success -> {
+      if (uiState.movies.isEmpty()) {
+        EmptyText("No movies available.")
+      } else {
+        PosterGrid(uiState.movies) { movie ->
+          PosterGridItem(title = movie.title, posterPath = movie.posterPath, onClick = { onMovieClick(movie) })
+        }
+      }
     }
   }
 }
@@ -198,8 +204,14 @@ private fun TvGridContent(uiState: TvListUiState, onTvClick: (TvSummary) -> Unit
   when (uiState) {
     is TvListUiState.Loading -> LoadingText()
     is TvListUiState.Error -> ErrorText(uiState.message)
-    is TvListUiState.Success -> PosterGrid(uiState.tvs) { tv ->
-      PosterGridItem(title = tv.name, posterPath = tv.posterPath, onClick = { onTvClick(tv) })
+    is TvListUiState.Success -> {
+      if (uiState.tvs.isEmpty()) {
+        EmptyText("No TV shows available.")
+      } else {
+        PosterGrid(uiState.tvs) { tv ->
+          PosterGridItem(title = tv.name, posterPath = tv.posterPath, onClick = { onTvClick(tv) })
+        }
+      }
     }
   }
 }
@@ -210,8 +222,14 @@ private fun StarGridContent(uiState: StarListUiState, onPersonClick: (PersonSumm
   when (uiState) {
     is StarListUiState.Loading -> LoadingText()
     is StarListUiState.Error -> ErrorText(uiState.message)
-    is StarListUiState.Success -> PosterGrid(uiState.people) { person ->
-      PosterGridItem(title = person.name, posterPath = person.profilePath, onClick = { onPersonClick(person) })
+    is StarListUiState.Success -> {
+      if (uiState.people.isEmpty()) {
+        EmptyText("No stars available.")
+      } else {
+        PosterGrid(uiState.people) { person ->
+          PosterGridItem(title = person.name, posterPath = person.profilePath, onClick = { onPersonClick(person) })
+        }
+      }
     }
   }
 }
@@ -226,7 +244,14 @@ private fun LoadingText() {
 @Composable
 private fun ErrorText(message: String) {
   Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    Text(text = message, color = TitleColor)
+    Text(text = "Failed to load: $message", color = TitleColor, textAlign = TextAlign.Center)
+  }
+}
+
+@Composable
+private fun EmptyText(message: String) {
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Text(text = message, color = TitleColor, textAlign = TextAlign.Center)
   }
 }
 
