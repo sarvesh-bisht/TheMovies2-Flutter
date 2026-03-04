@@ -9,32 +9,42 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.skydoves.themovies2.shared.bootstrap.SharedContainer
-import com.skydoves.themovies2.shared.core.domain.model.MovieSummary
-import com.skydoves.themovies2.shared.core.domain.usecase.GetPopularMoviesUseCase
+import com.skydoves.themovies2.shared.feature.movielist.MovieListUiState
 
 @Composable
 fun App() {
-  var movies by remember { mutableStateOf<List<MovieSummary>>(emptyList()) }
+  val stateHolder = remember { SharedContainer.movieListStateHolder(apiKey = null) }
+  val uiState by stateHolder.uiState.collectAsState()
 
   LaunchedEffect(Unit) {
-    // Keep null for now to use bootstrap data.
-    // Next step: provide key via platform-specific configuration.
-    movies = GetPopularMoviesUseCase(SharedContainer.movieRepository(apiKey = null)).invoke()
+    stateHolder.load(page = 1)
   }
 
   MaterialTheme {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-      Text(text = "ComposeApp bootstrap (Phase 2 contracts)")
-      LazyColumn {
-        items(movies) { movie ->
-          Text(text = "• ${movie.title}", modifier = Modifier.padding(top = 8.dp))
+      Text(text = "ComposeApp bootstrap (Phase 3 state-holder flow)")
+
+      when (val state = uiState) {
+        is MovieListUiState.Loading -> {
+          Text(text = "Loading movies...")
+        }
+
+        is MovieListUiState.Error -> {
+          Text(text = "Error: ${state.message}")
+        }
+
+        is MovieListUiState.Success -> {
+          LazyColumn {
+            items(state.movies) { movie ->
+              Text(text = "• ${movie.title}", modifier = Modifier.padding(top = 8.dp))
+            }
+          }
         }
       }
     }
