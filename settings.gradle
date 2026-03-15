@@ -1,4 +1,4 @@
-///*
+///
 // * Designed and developed by 2019 skydoves (Jaewoong Eum)
 // *
 // * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,3 +14,5 @@
 // * limitations under the License.
 // */
 include ':app'
+include ':composeApp'
+include ':shared'
