@@ -130,6 +130,13 @@ Only **Movie list read-only**.
 
 ---
 
+## Phase status update
+
+- ✅ Phase 3 (Single vertical slice POC) completed with GO decision (see `docs/phase-3-movie-list-parity-checklist.md`).
+- ▶️ Next active phase: Phase 4 (Database migration with SQLDelight).
+
+---
+
 ## Phase 4 — Database migration (Weeks 10–11)
 
 ### Tasks
